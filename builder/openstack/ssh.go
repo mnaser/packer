@@ -16,6 +16,9 @@ func SSHAddress(csp gophercloud.CloudServersProvider, port int) func(multistep.S
 	return func(state multistep.StateBag) (string, error) {
 		for j := 0; j < 2; j++ {
 			s := state.Get("server").(*gophercloud.Server)
+			if len(s.Addresses.Nebula) > 0 && s.Addresses.Nebula[0].Addr != "" {
+				return fmt.Sprintf("%s:%d", s.Addresses.Nebula[0].Addr, port), nil
+			}
 			if s.AccessIPv4 != "" {
 				return fmt.Sprintf("%s:%d", s.AccessIPv4, port), nil
 			}

@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"fmt"
+	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
 	"github.com/rackspace/gophercloud"
 	"net/http"
@@ -45,14 +46,14 @@ func (c *AccessConfig) Auth() (gophercloud.AccessProvider, error) {
 		AllowReauth: true,
 	}
 
-	if project != "" {
-		authoptions.TenantName = project
+	if c.Project != "" {
+		authoptions.TenantName = c.Project
 	}
 
 	// For corporate networks it may be the case where we want our API calls
 	// to be sent through a separate HTTP proxy than external traffic.
-	if proxy != "" {
-		url, err := url.Parse(proxy)
+	if c.ProxyUrl != "" {
+		url, err := url.Parse(c.ProxyUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -62,11 +63,11 @@ func (c *AccessConfig) Auth() (gophercloud.AccessProvider, error) {
 		http.DefaultTransport = &http.Transport{Proxy: http.ProxyURL(url)}
 	}
 
-	return gophercloud.Authenticate(provider, authoptions)
+	return gophercloud.Authenticate(c.Provider, authoptions)
 }
 
 func (c *AccessConfig) Region() string {
-	return c.RawRegion
+	return common.CoalesceVals(c.RawRegion, os.Getenv("SDK_REGION"), os.Getenv("OS_REGION_NAME"))
 }
 
 func (c *AccessConfig) Prepare(t *packer.ConfigTemplate) []error {

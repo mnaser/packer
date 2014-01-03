@@ -14,22 +14,16 @@ import (
 // for determining the SSH address based on the server AccessIPv4 setting..
 func SSHAddress(csp gophercloud.CloudServersProvider, port int) func(multistep.StateBag) (string, error) {
 	return func(state multistep.StateBag) (string, error) {
+		// #TODO(benbp): This for loop makes an assumption about the number of
+		// possible addresses there will be. There needs to be a more flexible
+		// conditional that loops through all of N available addresses.
 		for j := 0; j < 2; j++ {
 			s := state.Get("server").(*gophercloud.Server)
-			if len(s.Addresses.Nebula) > 0 && s.Addresses.Nebula[0].Addr != "" {
-				return fmt.Sprintf("%s:%d", s.Addresses.Nebula[0].Addr, port), nil
-			}
-			if len(s.Addresses.Public) > 0 && s.Addresses.Public[0].Addr != "" {
-				return fmt.Sprintf("%s:%d", s.Addresses.Public[0].Addr, port), nil
-			}
-			if len(s.Addresses.Private) > 0 && s.Addresses.Private[0].Addr != "" {
-				return fmt.Sprintf("%s:%d", s.Addresses.Private[0].Addr, port), nil
-			}
-			if s.AccessIPv4 != "" {
-				return fmt.Sprintf("%s:%d", s.AccessIPv4, port), nil
-			}
-			if s.AccessIPv6 != "" {
-				return fmt.Sprintf("[%s]:%d", s.AccessIPv6, port), nil
+			// #TODO(benbp): "nebula" should be replaced with a user specified
+			// variable in the packer builder template
+			addr := s.Addresses["nebula"].([]interface{})[j].(map[string]interface{})["addr"]
+			if addr != "" {
+				return fmt.Sprintf("%s:%d", addr, port), nil
 			}
 			serverState, err := csp.ServerById(s.Id)
 

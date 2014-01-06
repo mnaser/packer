@@ -14,32 +14,23 @@ import (
 // for determining the SSH address based on the server AccessIPv4 setting..
 func SSHAddress(csp gophercloud.CloudServersProvider, port int) func(multistep.StateBag) (string, error) {
 	return func(state multistep.StateBag) (string, error) {
-
-		// #TODO(benbp): this should be replaced with user specified
-		// values in the packer builder template
-		pools := []string{"public", "private", "nebula"}
-		// #TODO(benbp): This for loop makes an assumption about the number of
-		// possible addresses there will be. There needs to be a more flexible
-		// conditional that loops through all of N available addresses.
-		for j := 0; j < 2; j++ {
-			s := state.Get("server").(*gophercloud.Server)
-			for i := 0; i < len(pools); i++ {
-				if val, ok := s.Addresses[pools[i]]; ok {
-					addr := val.([]interface{})[j].(map[string]interface{})["addr"]
-					if addr != "" {
-						return fmt.Sprintf("%s:%d", addr, port), nil
-					}
+		s := state.Get("server").(*gophercloud.Server)
+		for _, v := range s.Addresses {
+			for _, obj := range v.([]interface{}) {
+				addr := obj.(map[string]interface{})["addr"]
+				if addr != "" {
+					return fmt.Sprintf("%s:%d", addr, port), nil
 				}
 			}
-			serverState, err := csp.ServerById(s.Id)
-
-			if err != nil {
-				return "", err
-			}
-
-			state.Put("server", serverState)
-			time.Sleep(1 * time.Second)
 		}
+		serverState, err := csp.ServerById(s.Id)
+
+		if err != nil {
+			return "", err
+		}
+
+		state.Put("server", serverState)
+		time.Sleep(1 * time.Second)
 
 		return "", errors.New("couldn't determine IP address for server")
 	}

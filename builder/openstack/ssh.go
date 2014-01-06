@@ -14,23 +14,23 @@ import (
 // for determining the SSH address based on the server AccessIPv4 setting..
 func SSHAddress(csp gophercloud.CloudServersProvider, port int) func(multistep.StateBag) (string, error) {
 	return func(state multistep.StateBag) (string, error) {
-		for j := 0; j < 2; j++ {
-			s := state.Get("server").(*gophercloud.Server)
-			if s.AccessIPv4 != "" {
-				return fmt.Sprintf("%s:%d", s.AccessIPv4, port), nil
+		s := state.Get("server").(*gophercloud.Server)
+		for _, v := range s.Addresses {
+			for _, obj := range v.([]interface{}) {
+				addr := obj.(map[string]interface{})["addr"]
+				if addr != "" {
+					return fmt.Sprintf("%s:%d", addr, port), nil
+				}
 			}
-			if s.AccessIPv6 != "" {
-				return fmt.Sprintf("[%s]:%d", s.AccessIPv6, port), nil
-			}
-			serverState, err := csp.ServerById(s.Id)
-
-			if err != nil {
-				return "", err
-			}
-
-			state.Put("server", serverState)
-			time.Sleep(1 * time.Second)
 		}
+		serverState, err := csp.ServerById(s.Id)
+
+		if err != nil {
+			return "", err
+		}
+
+		state.Put("server", serverState)
+		time.Sleep(1 * time.Second)
 
 		return "", errors.New("couldn't determine IP address for server")
 	}

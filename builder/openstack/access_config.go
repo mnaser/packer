@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 // AccessConfig is for common configuration related to openstack access
@@ -94,7 +95,7 @@ func (c *AccessConfig) Prepare(t *packer.ConfigTemplate) []error {
 		}
 	}
 
-	if c.RawRegion == "" {
+	if c.Region() == "" {
 		errs = append(errs, fmt.Errorf("region must be specified"))
 	}
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mitchellh/packer/packer"
+	"strings"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type RunConfig struct {
 	RawSSHTimeout string `mapstructure:"ssh_timeout"`
 	SSHUsername   string `mapstructure:"ssh_username"`
 	SSHPort       int    `mapstructure:"ssh_port"`
-	UsePublicIP   bool   `mapstructure:"use_public_ip"`
+	UsePublicIP   string `mapstructure:"use_public_ip"`
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration
@@ -41,6 +42,12 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 
 	if c.RawSSHTimeout == "" {
 		c.RawSSHTimeout = "5m"
+	}
+
+	if c.UsePublicIP == "" {
+		c.UsePublicIP = "true"
+	} else {
+		c.UsePublicIP = strings.ToLower(c.UsePublicIP)
 	}
 
 	// Validation

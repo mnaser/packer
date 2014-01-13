@@ -12,14 +12,14 @@ import (
 
 // SSHAddress returns a function that can be given to the SSH communicator
 // for determining the SSH address.
-func SSHAddress(csp gophercloud.CloudServersProvider, port int, usePublicIP bool) func(multistep.StateBag) (string, error) {
+func SSHAddress(csp gophercloud.CloudServersProvider, port int, usePublicIP string) func(multistep.StateBag) (string, error) {
 	return func(state multistep.StateBag) (string, error) {
 		// NOTE: benbp
 		// Test implementation. Won't work, but something similar to what the
 		// implementation might look like once gophercloud upstream is fixed.
 		for j := 0; j < 2; j++ {
 			s := state.Get("server").(*gophercloud.Server)
-			if usePublicIP == true && len(s.Addresses.Public) > 0 {
+			if usePublicIP == "true" && len(s.Addresses.Public) > 0 {
 				for _, server := range s.Addresses.Public {
 					if server.addr != "" {
 						return fmt.Sprintf("%s:%d", server.addr, port), nil

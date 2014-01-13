@@ -7,30 +7,36 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/communicator/ssh"
 	"github.com/rackspace/gophercloud"
-	"time"
 )
 
 // SSHAddress returns a function that can be given to the SSH communicator
-// for determining the SSH address based on the server AccessIPv4 setting..
-func SSHAddress(csp gophercloud.CloudServersProvider, port int) func(multistep.StateBag) (string, error) {
+// for determining the SSH address.
+func SSHAddress(csp gophercloud.CloudServersProvider, port int, usePublicIP bool) func(multistep.StateBag) (string, error) {
 	return func(state multistep.StateBag) (string, error) {
-		for j := 0; j < 2; j++ {
-			s := state.Get("server").(*gophercloud.Server)
-			if s.AccessIPv4 != "" {
-				return fmt.Sprintf("%s:%d", s.AccessIPv4, port), nil
+		// NOTE: benbp
+		// Test implementation. Won't work, but something similar to what the
+		// implementation might look like once gophercloud upstream is fixed.
+		s := state.Get("server").(*gophercloud.Server)
+		if usePublicIP == true && len(s.Addresses.Public) > 0 {
+			for _, server := range s.Addresses.Public {
+				if server.addr != "" {
+					return fmt.Sprintf("%s:%d", server.addr, port), nil
+				}
 			}
-			if s.AccessIPv6 != "" {
-				return fmt.Sprintf("[%s]:%d", s.AccessIPv6, port), nil
+		} else if len(s.Addresses.Private) > 0 {
+			for _, server := range s.Addresses.Private {
+				if server.addr != "" {
+					return fmt.Sprintf("%s:%d", server.addr, port), nil
+				}
 			}
-			serverState, err := csp.ServerById(s.Id)
-
-			if err != nil {
-				return "", err
-			}
-
-			state.Put("server", serverState)
-			time.Sleep(1 * time.Second)
 		}
+		serverState, err := csp.ServerById(s.Id)
+
+		if err != nil {
+			return "", err
+		}
+
+		state.Put("server", serverState)
 
 		return "", errors.New("couldn't determine IP address for server")
 	}

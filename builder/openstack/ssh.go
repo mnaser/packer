@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/communicator/ssh"
 	"github.com/rackspace/gophercloud"
+	"time"
 )
 
 // SSHAddress returns a function that can be given to the SSH communicator

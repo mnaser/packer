@@ -20,6 +20,7 @@ type AccessConfig struct {
 	Provider  string `mapstructure:"provider"`
 	RawRegion string `mapstructure:"region"`
 	ProxyUrl  string `mapstructure:"proxy_url"`
+	SecurityGroups []interface{} `mapstructure:"security_groups"`
 }
 
 // Auth returns a valid Auth object for access to openstack services, or

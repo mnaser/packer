@@ -9,9 +9,10 @@ import (
 )
 
 type StepRunSourceServer struct {
-	Flavor      string
-	Name        string
-	SourceImage string
+	Flavor        string
+	Name          string
+	SourceImage   string
+	SecurityGroup []map[string]interface{}
 
 	server *gophercloud.Server
 }
@@ -24,10 +25,11 @@ func (s *StepRunSourceServer) Run(state multistep.StateBag) multistep.StepAction
 	// XXX - validate image and flavor is available
 
 	server := gophercloud.NewServer{
-		Name:        s.Name,
-		ImageRef:    s.SourceImage,
-		FlavorRef:   s.Flavor,
-		KeyPairName: keyName,
+		Name:          s.Name,
+		ImageRef:      s.SourceImage,
+		FlavorRef:     s.Flavor,
+		KeyPairName:   keyName,
+		SecurityGroup: s.SecurityGroup,
 	}
 
 	serverResp, err := csp.CreateServer(server)

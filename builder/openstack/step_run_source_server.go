@@ -12,6 +12,7 @@ type StepRunSourceServer struct {
 	Flavor      string
 	Name        string
 	SourceImage string
+	SecurityGroup []map[string]interface {}
 
 	server *gophercloud.Server
 }
@@ -28,6 +29,7 @@ func (s *StepRunSourceServer) Run(state multistep.StateBag) multistep.StepAction
 		ImageRef:    s.SourceImage,
 		FlavorRef:   s.Flavor,
 		KeyPairName: keyName,
+		SecurityGroup: s.SecurityGroup,
 	}
 
 	serverResp, err := csp.CreateServer(server)

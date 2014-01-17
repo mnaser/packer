@@ -103,6 +103,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			Name:        b.config.ImageName,
 			Flavor:      b.config.Flavor,
 			SourceImage: b.config.SourceImage,
+			SecurityGroup: b.config.SecurityGroup,
 		},
 		&common.StepConnectSSH{
 			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName, newFloatingIp),

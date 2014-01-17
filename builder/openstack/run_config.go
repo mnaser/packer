@@ -10,14 +10,16 @@ import (
 // RunConfig contains configuration for running an instance from a source
 // image and details on how to access that launched image.
 type RunConfig struct {
-	SourceImage    string `mapstructure:"source_image"`
-	Flavor         string `mapstructure:"flavor"`
-	RawSSHTimeout  string `mapstructure:"ssh_timeout"`
-	SSHUsername    string `mapstructure:"ssh_username"`
-	SSHPort        int    `mapstructure:"ssh_port"`
-	UseFloatingIp  bool   `mapstructure:"use_floating_ip"`
-	FloatingIpPool string `mapstructure:"floating_ip_pool"`
-	FloatingIp     string `mapstructure:"floating_ip"`
+	SourceImage     string      `mapstructure:"source_image"`
+	Flavor          string      `mapstructure:"flavor"`
+	RawSSHTimeout   string      `mapstructure:"ssh_timeout"`
+	SSHUsername     string      `mapstructure:"ssh_username"`
+	SSHPort         int         `mapstructure:"ssh_port"`
+	UseFloatingIp   bool        `mapstructure:"use_floating_ip"`
+	FloatingIpPool  string      `mapstructure:"floating_ip_pool"`
+	FloatingIp      string      `mapstructure:"floating_ip"`
+	SecurityStrings interface{} `mapstructure:"security_groups"`
+	SecurityGroup   []map[string]interface{}
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration
@@ -80,9 +82,32 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 		}
 	}
 
+	//Conversion from []string or string to []map[string]interface{} for security groups
+
+	//This is the slice of strings we'll be giving to our SecurityGroup map.
+	var secGroupInput []string
+
+	//If the data we've been handed from the template is one string, we
+	//push that string into our input slice.
+	//If they've given us a slice of strings, we just set our input slice to that.
+	if securityString, ok := c.SecurityStrings.(string); ok {
+		secGroupInput = append(secGroupInput, securityString)
+	} else if securityString, ok := c.SecurityStrings.([]string); ok {
+		secGroupInput = securityString
+	}
+
+	c.SecurityGroup = make([]map[string]interface{}, len(secGroupInput))
+
+	//Then we'll convert our slice of strings into a slice of map[string]interface{}
+	for i, groupName := range secGroupInput {
+		c.SecurityGroup[i] = make(map[string]interface{})
+		c.SecurityGroup[i]["name"] = groupName
+	}
+
 	c.sshTimeout, err = time.ParseDuration(c.RawSSHTimeout)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("Failed parsing ssh_timeout: %s", err))
+		errs = append(
+			errs, fmt.Errorf("Failed parsing ssh_timeout: %s", err))
 	}
 
 	return errs

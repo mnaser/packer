@@ -15,6 +15,7 @@ type RunConfig struct {
 	RawSSHTimeout string `mapstructure:"ssh_timeout"`
 	SSHUsername   string `mapstructure:"ssh_username"`
 	SSHPort       int    `mapstructure:"ssh_port"`
+	SecurityGroup []map[string]interface {} `mapstructure:"security_groups"`
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration

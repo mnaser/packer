@@ -70,7 +70,8 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 		var err error
 		*ptr, err = t.Process(*ptr, nil)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("Error processing %s: %s", n, err))
+			errs = append(
+				errs, fmt.Errorf("Error processing %s: %s", n, err))
 		}
 	}
 
@@ -84,7 +85,8 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 
 	c.sshTimeout, err = time.ParseDuration(c.RawSSHTimeout)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("Failed parsing ssh_timeout: %s", err))
+		errs = append(
+			errs, fmt.Errorf("Failed parsing ssh_timeout: %s", err))
 	}
 
 	return errs

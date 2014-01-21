@@ -30,7 +30,6 @@ func (s *StepRunSourceServer) Run(state multistep.StateBag) multistep.StepAction
 		FlavorRef:   s.Flavor,
 		KeyPairName: keyName,
 		SecurityGroup: s.SecurityGroup,
-
 	}
 
 	serverResp, err := csp.CreateServer(server)

@@ -15,7 +15,8 @@ type RunConfig struct {
 	RawSSHTimeout string `mapstructure:"ssh_timeout"`
 	SSHUsername   string `mapstructure:"ssh_username"`
 	SSHPort       int    `mapstructure:"ssh_port"`
-	SecurityGroup []map[string]interface {} `mapstructure:"security_groups"`
+	SecurityStrings []string  `mapstructure:"security_groups"`
+	SecurityGroup []map[string]interface{}
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration
@@ -29,7 +30,7 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 			return []error{err}
 		}
 	}
-
+	
 	// Defaults
 	if c.SSHUsername == "" {
 		c.SSHUsername = "root"
@@ -69,9 +70,16 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 		var err error
 		*ptr, err = t.Process(*ptr, nil)
 		if err != nil {
-			errs = append(
-				errs, fmt.Errorf("Error processing %s: %s", n, err))
+			errs = append(errs, fmt.Errorf("Error processing %s: %s", n, err))
 		}
+	}
+
+	//Conversion from []string to []map[string]interface{} for security groups
+	c.SecurityGroup = make([]map[string]interface{}, len(c.SecurityStrings))
+	
+	for i, groupName := range c.SecurityStrings{
+		c.SecurityGroup[i] = make(map[string]interface{})
+		c.SecurityGroup[i]["name"] = groupName
 	}
 
 	c.sshTimeout, err = time.ParseDuration(c.RawSSHTimeout)

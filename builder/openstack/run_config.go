@@ -15,7 +15,7 @@ type RunConfig struct {
 	RawSSHTimeout string `mapstructure:"ssh_timeout"`
 	SSHUsername   string `mapstructure:"ssh_username"`
 	SSHPort       int    `mapstructure:"ssh_port"`
-	SecurityStrings []string  `mapstructure:"security_groups"`
+	SecurityStrings interface{} `mapstructure:"security_groups"`
 	SecurityGroup []map[string]interface{}
 
 	// Unexported fields that are calculated from others
@@ -75,13 +75,28 @@ func (c *RunConfig) Prepare(t *packer.ConfigTemplate) []error {
 		}
 	}
 
-	//Conversion from []string to []map[string]interface{} for security groups
-	c.SecurityGroup = make([]map[string]interface{}, len(c.SecurityStrings))
+	//Conversion from []string or string to []map[string]interface{} for security groups
 	
-	for i, groupName := range c.SecurityStrings{
+	//This is the slice of strings we'll be giving to our SecurityGroup map.
+	var secGroupInput []string
+
+	//If the data we've been handed from the template is one string, we
+	//push that string into our input slice.
+	//If they've given us a slice of strings, we just set our input slice to that.
+	if securityString, ok := c.SecurityStrings.(string); ok {
+       secGroupInput = append(secGroupInput, securityString)
+    } else if securityString, ok := c.SecurityStrings.([]string); ok {
+       secGroupInput = securityString
+    }
+
+	c.SecurityGroup = make([]map[string]interface{}, len(secGroupInput))
+	
+	//Then we'll convert our slice of strings into a slice of map[string]interface{}
+	for i, groupName := range secGroupInput{
 		c.SecurityGroup[i] = make(map[string]interface{})
 		c.SecurityGroup[i]["name"] = groupName
 	}
+
 
 	c.sshTimeout, err = time.ParseDuration(c.RawSSHTimeout)
 	if err != nil {

@@ -17,6 +17,7 @@ type RunConfig struct {
 	SSHPort           int    `mapstructure:"ssh_port"`
 	IPPoolName    	  string `mapstructure:"ip_pool_name"`
 	OpenstackProvider string `mapstructure:"openstack_provider"`
+	FloatingIpPool string `mapstructure:"floating_ip_pool"`
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration

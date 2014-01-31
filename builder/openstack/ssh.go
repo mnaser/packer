@@ -12,10 +12,25 @@ import (
 // SSHAddress returns a function that can be given to the SSH communicator
 // for determining the SSH address based on the server AccessIPv4 setting..
 func SSHAddress(csp gophercloud.CloudServersProvider, port int,
-	specify_ip_pool string) func(multistep.StateBag) (string, error) {
+	specify_ip_pool string, allocated_floating_ip gophercloud.FloatingIp) func(multistep.StateBag) (string, error) {
 
 	return func(state multistep.StateBag) (string, error) {
 		s := state.Get("server").(*gophercloud.Server)
+
+		//If the FloatingIp field isn't empty we'll associate the ip with our server
+		//And then return the address we're handed.
+		if allocated_floating_ip.Ip != "" {
+
+			err := csp.AssociateFloatingIp(s.Id, allocated_floating_ip)
+
+			if err != nil {
+				return "", errors.New("Error Associating the new Floating Ip with the server")
+			}
+
+			return fmt.Sprintf("%s:%d", allocated_floating_ip.Ip, port), nil
+
+		}
+
 		ip_pools, err := s.AllAddressPools()
 		if err != nil {
 			return "", errors.New("Error parsing SSH addresses")

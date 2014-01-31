@@ -81,6 +81,18 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	state.Put("hook", hook)
 	state.Put("ui", ui)
 
+	//Check to see if we want to allocate a new floating ip
+	var newFloatingIp gophercloud.FloatingIp
+
+	if b.config.FloatingIpPool != "" {
+		ui.Say("Setting up floating IP")
+		newFloatingIp, err = csp.CreateFloatingIp(b.config.FloatingIpPool)
+		if err != nil {
+			log.Printf("CreateFloatingIp failed")
+			return nil, err
+		}
+	}
+
 	// Build the steps
 	steps := []multistep.Step{
 		&StepKeyPair{
@@ -93,9 +105,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			SourceImage: b.config.SourceImage,
 		},
 		&common.StepConnectSSH{
-			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName),
+			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName, newFloatingIp),
 			SSHConfig:      SSHConfig(b.config.SSHUsername),
 			SSHWaitTimeout: b.config.SSHTimeout(),
+			FloatingIP:     newFloatingIp,
 		},
 		&common.StepProvision{},
 		&stepCreateImage{},

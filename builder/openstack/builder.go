@@ -60,14 +60,16 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	if err != nil {
 		return nil, err
 	}
-
+	//fetches the api requsites from gophercloud for the apprpriate 
+	//openstack variant
 	api, err := gophercloud.PopulateApi(b.config.RunConfig.OpenstackProvider)
 		if err != nil{
 			return nil,err
 		}
 	api.Region = b.config.AccessConfig.Region()
-
+	
 	csp, err := gophercloud.ServersApi(auth, api)
+
 	if err != nil {
 		log.Printf("Region: %s", b.config.AccessConfig.Region())
 		return nil, err
@@ -92,7 +94,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			SourceImage: b.config.SourceImage,
 		},
 		&common.StepConnectSSH{
-			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName),
+			SSHAddress:     SSHAddress(csp, b.config.SSHPort),
 			SSHConfig:      SSHConfig(b.config.SSHUsername),
 			SSHWaitTimeout: b.config.SSHTimeout(),
 		},

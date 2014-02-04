@@ -10,16 +10,17 @@ import (
 // RunConfig contains configuration for running an instance from a source
 // image and details on how to access that launched image.
 type RunConfig struct {
-	SourceImage     string      `mapstructure:"source_image"`
-	Flavor          string      `mapstructure:"flavor"`
-	RawSSHTimeout   string      `mapstructure:"ssh_timeout"`
-	SSHUsername     string      `mapstructure:"ssh_username"`
-	SSHPort         int         `mapstructure:"ssh_port"`
-	UseFloatingIp   bool        `mapstructure:"use_floating_ip"`
-	FloatingIpPool  string      `mapstructure:"floating_ip_pool"`
-	FloatingIp      string      `mapstructure:"floating_ip"`
-	SecurityStrings interface{} `mapstructure:"security_groups"`
-	SecurityGroup   []map[string]interface{}
+	SourceImage       string      `mapstructure:"source_image"`
+	Flavor            string      `mapstructure:"flavor"`
+	RawSSHTimeout     string      `mapstructure:"ssh_timeout"`
+	SSHUsername       string      `mapstructure:"ssh_username"`
+	SSHPort           int         `mapstructure:"ssh_port"`
+	UseFloatingIp     bool        `mapstructure:"use_floating_ip"`
+	FloatingIpPool    string      `mapstructure:"floating_ip_pool"`
+	FloatingIp        string      `mapstructure:"floating_ip"`
+	OpenstackProvider string      `mapstructure:"openstack_provider"`
+	SecurityStrings   interface{} `mapstructure:"security_groups"`
+	SecurityGroup     []map[string]interface{}
 
 	// Unexported fields that are calculated from others
 	sshTimeout time.Duration

@@ -60,12 +60,14 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	if err != nil {
 		return nil, err
 	}
-	api := &gophercloud.ApiCriteria{
-		Type:      "compute",
-		Region:    b.config.AccessConfig.Region(),
-		UrlChoice: gophercloud.PublicURL,
-	}
-	csp, err := gophercloud.ServersApi(auth, *api)
+
+	api, err := gophercloud.PopulateApi(b.config.RunConfig.OpenstackProvider)
+		if err != nil{
+			return nil,err
+		}
+	api.Region = b.config.AccessConfig.Region()
+
+	csp, err := gophercloud.ServersApi(auth, api)
 	if err != nil {
 		log.Printf("Region: %s", b.config.AccessConfig.Region())
 		return nil, err

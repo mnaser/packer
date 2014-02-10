@@ -85,7 +85,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	var newFloatingIp gophercloud.FloatingIp
 
 	if b.config.FloatingIpPool != "" {
-		ui.Say("Setting up floating IP")
+		ui.Say("Creating temporary floating IP...")
 		newFloatingIp, err = csp.CreateFloatingIp(b.config.FloatingIpPool)
 		if err != nil {
 			log.Printf("CreateFloatingIp failed")

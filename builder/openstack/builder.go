@@ -4,11 +4,14 @@
 package openstack
 
 import (
+	"errors"
 	"fmt"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
 	"github.com/rackspace/gophercloud"
+	"github.com/rackspace/gophercloud/openstack/compute/servers"
+	"github.com/rackspace/gophercloud/openstack/identity"
 	"log"
 )
 
@@ -63,8 +66,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	//fetches the api requisites from gophercloud for the apprOpriate
 	//openstack variant
 	api, err := gophercloud.PopulateApi(b.config.RunConfig.OpenstackProvider)
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
 	api.Region = b.config.AccessConfig.Region()
 
@@ -81,11 +84,52 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	state.Put("hook", hook)
 	state.Put("ui", ui)
 
+	log.Println(" AccessConfig ==>", b.config.AccessConfig)
+	authOpts := identity.AuthOptions{
+		Endpoint:    b.config.Provider,
+		Username:    b.config.Username,
+		Password:    b.config.Password,
+		TenantId:    b.config.Project,
+		TenantName:  b.config.Project,
+		AllowReauth: true,
+	}
+
+	//It's necessary to set up a client with the new API before we can get the proper server info
+	authResults, err := identity.Authenticate(authOpts)
+	if err != nil {
+		return nil, err
+	}
+	//We have to get the server catalog to find the compute endpoint
+	serviceCatalog, err := identity.GetServiceCatalog(authResults)
+
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := serviceCatalog.CatalogEntries()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var computeEndpoint string
+	for _, entry := range entries {
+		if entry.Type == "compute" {
+			computeEndpoint = entry.Endpoints[0].PublicURL
+		}
+	}
+
+	if computeEndpoint == "" {
+		return nil, errors.New("Couldn't find compute endpoint")
+	}
+
+	client := servers.NewClient(computeEndpoint, authResults, authOpts)
+
 	//Check to see if we want to allocate a new floating ip
 	var newFloatingIp gophercloud.FloatingIp
 
 	if b.config.FloatingIpPool != "" {
-		ui.Say("Setting up floating IP")
+		ui.Say("Setting up floating IP...")
 		newFloatingIp, err = csp.CreateFloatingIp(b.config.FloatingIpPool)
 		if err != nil {
 			log.Printf("CreateFloatingIp failed")
@@ -105,7 +149,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			SourceImage: b.config.SourceImage,
 		},
 		&common.StepConnectSSH{
-			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName, newFloatingIp),
+			SSHAddress:     SSHAddress(csp, b.config.SSHPort, newFloatingIp, client),
 			SSHConfig:      SSHConfig(b.config.SSHUsername),
 			SSHWaitTimeout: b.config.SSHTimeout(),
 			FloatingIP:     newFloatingIp,

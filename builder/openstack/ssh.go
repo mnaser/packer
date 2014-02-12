@@ -7,12 +7,13 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/communicator/ssh"
 	"github.com/rackspace/gophercloud"
+	"github.com/rackspace/gophercloud/openstack/compute/servers"
 )
 
 // SSHAddress returns a function that can be given to the SSH communicator
 // for determining the SSH address based on the server AccessIPv4 setting..
 func SSHAddress(csp gophercloud.CloudServersProvider, port int,
-	specify_ip_pool string, allocated_floating_ip gophercloud.FloatingIp) func(multistep.StateBag) (string, error) {
+	allocated_floating_ip gophercloud.FloatingIp, client *servers.Client) func(multistep.StateBag) (string, error) {
 
 	return func(state multistep.StateBag) (string, error) {
 		s := state.Get("server").(*gophercloud.Server)
@@ -30,24 +31,26 @@ func SSHAddress(csp gophercloud.CloudServersProvider, port int,
 			return fmt.Sprintf("%s:%d", allocated_floating_ip.Ip, port), nil
 
 		}
-
-		ip_pools, err := s.AllAddressPools()
+		
+		listResults, err := servers.List(client)
 		if err != nil {
-			return "", errors.New("Error parsing SSH addresses")
+			return "",errors.New("Could not get server list")
 		}
-		for pool, addresses := range ip_pools {
-			if specify_ip_pool != "" {
-				if pool == specify_ip_pool {
-					for _, address := range addresses {
-						if address.Addr != "" {
-							return fmt.Sprintf("%s:%d", address.Addr, port), nil
+
+		servers, err := servers.GetServers(listResults)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Could not parse server list: %s", err))
+		}
+
+		for _, server := range servers {
+			if server.Id == s.Id {
+				for _, slices := range server.Addresses {
+					sliceVar := slices.([]interface{})
+					for _, address := range sliceVar {
+						target := address.(map[string]interface{})
+						if target["addr"] != "" {
+							return fmt.Sprintf("%s:%d", target["addr"].(string), port), nil
 						}
-					}
-				}
-			} else if pool != "" {
-				for _, address := range addresses {
-					if address.Addr != "" {
-						return fmt.Sprintf("%s:%d", address.Addr, port), nil
 					}
 				}
 			}

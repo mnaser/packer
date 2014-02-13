@@ -84,9 +84,15 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	//Check to see if we want to allocate a new floating ip
 	var newFloatingIp gophercloud.FloatingIp
 
-	if b.config.FloatingIpPool != "" {
+	if b.config.FloatingIpFlag {
+		//If we haven't recieved the name of the pool that we'll be pulling from,
+		//we default the pool name to "public"
+		ipPoolName := b.config.FloatingIpPool
+		if ipPoolName == ""{
+			ipPoolName = "public"
+		}
 		ui.Say("Creating temporary floating IP...")
-		newFloatingIp, err = csp.CreateFloatingIp(b.config.FloatingIpPool)
+		newFloatingIp, err = csp.CreateFloatingIp(ipPoolName)
 		if err != nil {
 			log.Printf("CreateFloatingIp failed")
 			return nil, err

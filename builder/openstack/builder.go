@@ -93,6 +93,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			SourceImage:   b.config.SourceImage,
 			SecurityGroup: b.config.SecurityGroup,
 		},
+		&StepAllocateIp{
+			FloatingIpPool: b.config.FloatingIpPool,
+			FloatingIp:     b.config.FloatingIp,
+		},
 		&common.StepConnectSSH{
 			SSHAddress:     SSHAddress(csp, b.config.SSHPort),
 			SSHConfig:      SSHConfig(b.config.SSHUsername),

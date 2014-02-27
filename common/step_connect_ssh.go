@@ -94,19 +94,7 @@ WaitLoop:
 	return multistep.ActionContinue
 }
 
-func (s *StepConnectSSH) Cleanup(state multistep.StateBag) {
-	//Cleanup doesn't do anything unless there's a floatingIp we need to free
-	if s.FloatingIP.Ip != "" {
-		ui := state.Get("ui").(packer.Ui)
-		ui.Say(fmt.Sprintf("Freeing allocated floating Ip %s", s.FloatingIP.Ip))
-
-		csp := state.Get("csp").(gophercloud.CloudServersProvider)
-		err := csp.DeleteFloatingIp(s.FloatingIP)
-
-		if err != nil {
-			ui.Error(fmt.Sprintf("Error releasing Floating IP, may still be around: %s", err))
-		}
-	}
+func (s *StepConnectSSH) Cleanup(multistep.StateBag) {
 }
 
 func (s *StepConnectSSH) waitForSSH(state multistep.StateBag, cancel <-chan struct{}) (packer.Communicator, error) {

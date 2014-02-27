@@ -63,8 +63,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	//fetches the api requisites from gophercloud for the apprOpriate
 	//openstack variant
 	api, err := gophercloud.PopulateApi(b.config.RunConfig.OpenstackProvider)
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
 	api.Region = b.config.AccessConfig.Region()
 
@@ -81,18 +81,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	state.Put("hook", hook)
 	state.Put("ui", ui)
 
-	//Check to see if we want to allocate a new floating ip
-	var newFloatingIp gophercloud.FloatingIp
-
-	if b.config.FloatingIpPool != "" {
-		ui.Say("Setting up floating IP")
-		newFloatingIp, err = csp.CreateFloatingIp(b.config.FloatingIpPool)
-		if err != nil {
-			log.Printf("CreateFloatingIp failed")
-			return nil, err
-		}
-	}
-
 	// Build the steps
 	steps := []multistep.Step{
 		&StepKeyPair{
@@ -100,16 +88,19 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			DebugKeyPath: fmt.Sprintf("os_%s.pem", b.config.PackerBuildName),
 		},
 		&StepRunSourceServer{
-			Name:        b.config.ImageName,
-			Flavor:      b.config.Flavor,
-			SourceImage: b.config.SourceImage,
+			Name:          b.config.ImageName,
+			Flavor:        b.config.Flavor,
+			SourceImage:   b.config.SourceImage,
 			SecurityGroup: b.config.SecurityGroup,
 		},
+		&StepAllocateIp{
+			FloatingIpPool: b.config.FloatingIpPool,
+			FloatingIp:     b.config.FloatingIp,
+		},
 		&common.StepConnectSSH{
-			SSHAddress:     SSHAddress(csp, b.config.SSHPort, b.config.IPPoolName, newFloatingIp),
+			SSHAddress:     SSHAddress(csp, b.config.SSHPort),
 			SSHConfig:      SSHConfig(b.config.SSHUsername),
 			SSHWaitTimeout: b.config.SSHTimeout(),
-			FloatingIP:     newFloatingIp,
 		},
 		&common.StepProvision{},
 		&stepCreateImage{},
